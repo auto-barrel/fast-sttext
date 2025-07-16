@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  fast-tts:
+    build: .
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/service-account-key.json
+      - DEFAULT_LANGUAGE=pt-BR
+      - DEFAULT_VOICE_GENDER=FEMALE
+      - USE_PREMIUM_VOICES=true
+      - SPEAKING_RATE=1.0
+      - PITCH=-5.0
+      - VOLUME_GAIN_DB=0.0
+      - INPUT_DIR=/app/input
+      - OUTPUT_DIR=/app/output
+    volumes:
+      - ./input:/app/input
+      - ./output:/app/output
+      - ./credentials:/app/credentials:ro
+    # Add this for better debugging
+    stdin_open: true
+    tty: true
+    command: python -m src.main generate /app/input/test_doc.txt
