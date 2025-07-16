@@ -3,7 +3,7 @@ Configuration module for the audiobook generator.
 """
 
 import os
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 class Config:
@@ -13,14 +13,14 @@ class Config:
     DEFAULT_LANGUAGE_CODE = "pt-BR"
     DEFAULT_VOICE_GENDER = "FEMALE"
     DEFAULT_AUDIO_ENCODING = "MP3"
-    DEFAULT_SPEAKING_RATE = 1.0
+    DEFAULT_SPEAKING_RATE = 0.35
     DEFAULT_PITCH = 0.0
     DEFAULT_VOLUME_GAIN_DB = 0.0
 
     # Audio processing settings
-    CHUNK_SIZE = 5000  # Maximum characters per TTS request
+    CHUNK_SIZE = 1000  # Maximum characters per TTS request
     PAUSE_BETWEEN_SENTENCES = 800  # milliseconds
-    PAUSE_BETWEEN_PARAGRAPHS = 1500  # milliseconds
+    PAUSE_BETWEEN_PARAGRAPHS = 2000  # milliseconds
     PAUSE_BETWEEN_CHAPTERS = 3000  # milliseconds
 
     # File settings

@@ -267,18 +267,15 @@ The application creates detailed logs in `audiobook_generator.log` for debugging
 4. Add tests if applicable
 5. Submit a pull request
 
-## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Google Cloud Text-to-Speech API
 - pydub library for audio processing
 - NLTK for text processing
 - Click for CLI interface
 
-## 📞 Support
+## Support
 
 For issues and questions:
 - Open an issue on GitHub
@@ -288,4 +285,4 @@ For issues and questions:
 ---
 
 **Made with ❤️ to help you study better!**
-Project should be able to receive inputs as big text files or input strings and covert it to audio .mp3 files to help me hear and study even when i cant read
+The project should be able to receive inputs as large text files or input strings and convert them to audio (.mp3) files, helping me listen and study even when I can’t read.
