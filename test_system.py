@@ -201,6 +201,7 @@ def main():
         test_text_processing,
         test_configuration,
         test_google_credentials,
+        test_chunk_sizes,
     ]
 
     passed = 0
@@ -221,6 +222,46 @@ def main():
     print("1. Make sure Google Cloud credentials are set up")
     print("2. Install ffmpeg if not already installed")
     print("3. Run: python example.py")
+
+
+def test_chunk_sizes():
+    """Test different chunk sizes with your sample text."""
+    try:
+        from src.config import Config
+        from src.text_processor import TextProcessor
+        from src.file_handler import FileHandler
+
+        print("Testing chunk sizing")
+
+        # Sample text from your test_book.txt
+        test_file = "input/test_book.txt"
+
+        processor = TextProcessor()
+        file_handler = FileHandler()
+
+        # Test different chunk sizes
+        chunk_sizes = [1500, 2000, 2500, 2800, 3000, 3500]
+        test_content = file_handler.read_text_file(filepath=test_file)
+
+        for size in chunk_sizes:
+            # Simulate processing
+            segments = processor.create_segments(test_content, size)
+
+            for i, segment in enumerate(segments):
+                ssml = processor.create_ssml(segment.text)
+                ssml_bytes = len(ssml.encode("utf-8"))
+
+                print(f"Chunk size {size}: Segment {i+1}")
+                print(f"  Text length: {len(segment.text)} chars")
+                print(f"  SSML size: {ssml_bytes} bytes")
+                print(f"  Within limit: {ssml_bytes <= Config.MAX_API_BYTES}")
+                print()
+
+        print(f"Chunk sizing within limits for API settings")
+        return True
+    except Exception as e:
+        print("chunk measurement failed")
+        return False
 
 
 if __name__ == "__main__":

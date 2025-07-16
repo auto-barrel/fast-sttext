@@ -4,6 +4,7 @@ Configuration module for the audiobook generator.
 
 import os
 from typing import Any, Dict
+import logging
 
 
 class Config:
@@ -13,26 +14,27 @@ class Config:
     DEFAULT_LANGUAGE_CODE = "pt-BR"
     DEFAULT_VOICE_GENDER = "FEMALE"
     DEFAULT_AUDIO_ENCODING = "MP3"
-    DEFAULT_SPEAKING_RATE = 0.35
+    DEFAULT_SPEAKING_RATE = 0.95
     DEFAULT_PITCH = 0.0
-    DEFAULT_VOLUME_GAIN_DB = 0.0
-
-    # Audio processing settings
-    CHUNK_SIZE = 1000  # Maximum characters per TTS request
     PAUSE_BETWEEN_SENTENCES = 800  # milliseconds
     PAUSE_BETWEEN_PARAGRAPHS = 2000  # milliseconds
     PAUSE_BETWEEN_CHAPTERS = 3000  # milliseconds
+
+    DEFAULT_VOLUME_GAIN_DB = 0.3
+    # Audio processing settings - Updated for optimal API usage
+    CHUNK_SIZE = 3500  # Conservative for 4000 byte limit
+    # Alternative: CHUNK_SIZE = 3500  # For actual 5000 byte API limit
+    MAX_API_BYTES = 4000  # Your target limit (API supports 5000)
 
     # File settings
     INPUT_DIR = "input"
     OUTPUT_DIR = "output"
     SUPPORTED_TEXT_FORMATS = [".txt", ".md"]
     SUPPORTED_EBOOK_FORMATS = [".epub", ".pdf"]
-
     # Voice options
     VOICE_OPTIONS = {
         "pt-BR": {
-            "FEMALE": ["pt-BR-Wavenet-A", "pt-BR-Wavenet-C", "pt-BR-Standard-A"],
+            "FEMALE": ["pt-BR-Wavenet-C", "pt-BR-Wavenet-A", "pt-BR-Standard-A"],
             "MALE": ["pt-BR-Wavenet-B", "pt-BR-Standard-B"],
         },
         "en-US": {
@@ -48,7 +50,8 @@ class Config:
         """Get appropriate voice name based on language and gender."""
         voices = cls.VOICE_OPTIONS.get(language_code, {}).get(gender, [])
         if not voices:
-            return None
+            logging.warning("No voices avaliable, check VOICE_OPTIONS")
+            return "None"
 
         # Prefer Wavenet (premium) voices if available
         if premium:
@@ -70,3 +73,29 @@ class Config:
     def get_input_path(cls, filename: str) -> str:
         """Get full input path for a filename."""
         return os.path.join(cls.INPUT_DIR, filename)
+
+    @classmethod
+    def _validate_chunk_size(cls, text: str) -> bool:
+        """
+        Validate if text chunk will fit within API limits.
+
+        Args:
+            text: Text to validate
+
+        Returns:
+            True if chunk is within limits
+        """
+        estimated_size = cls.__estimate_ssml_size(text)
+        return estimated_size <= cls.MAX_API_BYTES
+
+    @classmethod
+    def __estimate_ssml_size(cls, text: str) -> int:
+        """Estimate SSML size in bytes."""
+        import re
+
+        sentence_count = len(re.findall(r"[.!?]+", text))
+        number_count = len(re.findall(r"\b\d+\b", text))
+        base_size = len(text.encode("utf-8"))
+
+        ssml_overhead = 15 + (sentence_count * 25) + (number_count * 35)
+        return base_size + ssml_overhead

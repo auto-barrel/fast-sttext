@@ -43,6 +43,26 @@ class TextProcessor:
         # Remove excessive whitespace
         text = re.sub(r"\s+", " ", text)
 
+        # Alternative pattern for references without punctuation before
+        # Matches: word + number + space + capital letter (but not years/dates)
+        text = re.sub(
+            r"(\w)\s*(\d{1,2})\s+([A-Z])",
+            lambda m: (
+                m.group(1) + " " + m.group(3)
+                if not m.group(2) in ["19", "20"] and len(m.group(2)) <= 2
+                else m.group(0)
+            ),
+            text,
+        )
+
+        # More specific pattern for common reference patterns
+        # Matches patterns like "bronze.8 Um" or "história".2 A"
+        text = re.sub(
+            r"([a-záàâãéêíóôõúç])([.!?]?)(\d{1,2})\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ])",
+            r"\1\2 \4",
+            text,
+        )
+
         # Fix common punctuation issues
         text = re.sub(r"([.!?])\s*([.!?])", r"\1 \2", text)
 

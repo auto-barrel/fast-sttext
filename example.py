@@ -41,14 +41,7 @@ def main():
     """
 
     # Save sample text
-    sample_file = "input/sample.txt"
-    os.makedirs("input", exist_ok=True)
-
-    with open(sample_file, "w", encoding="utf-8") as f:
-        f.write(sample_text)
-
-    print(f"Created sample file: {sample_file}")
-
+    sample_file = "input/test_doc.txt"
     # Generate audiobook
     generator = None
     try:

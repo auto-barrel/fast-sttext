@@ -168,22 +168,6 @@ class FileHandler:
         else:
             raise ValueError(f"Unsupported file format: {extension}")
 
-    def save_text_file(self, content: str, filepath: str) -> None:
-        """
-        Save text content to a file.
-
-        Args:
-            content: Text content to save
-            filepath: Output file path
-        """
-        try:
-            with open(filepath, "w", encoding="utf-8") as f:
-                f.write(content)
-            logger.info(f"Saved text file: {filepath}")
-        except Exception as e:
-            logger.error(f"Failed to save text file {filepath}: {e}")
-            raise
-
     def get_file_info(self, filepath: str) -> Dict[str, Any]:
         """
         Get information about a file.

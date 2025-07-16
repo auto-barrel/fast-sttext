@@ -1,0 +1,19 @@
+
+    Capítulo 1: Introdução
+    
+    Este é um exemplo de texto que será convertido em audiobook.
+    O sistema é capaz de detectar capítulos automaticamente.
+    
+    Suporta parágrafos múltiplos e faz pausas apropriadas entre sentenças.
+    A qualidade do áudio é excelente graças ao Google Text-to-Speech.
+    
+    Capítulo 2: Funcionalidades
+    
+    O sistema possui várias funcionalidades interessantes:
+    - Processamento inteligente de texto
+    - Divisão automática em capítulos
+    - Normalização de áudio
+    - Metadados automáticos
+    
+    A geração é rápida e eficiente para textos de qualquer tamanho.
+    
