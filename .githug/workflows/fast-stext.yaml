@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, ci/setup-docker-and-release]
   pull_request:
-    branches: [main, develop, ci/setup-docker-and-release]
+    branches: [main, develop]
 
 jobs:
   test:
