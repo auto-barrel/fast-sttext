@@ -6,6 +6,7 @@ Converts text files to audiobooks using Google Text-to-Speech API.
 import logging
 import os
 import sys
+from pathlib import Path
 from typing import List, Optional
 
 import click
@@ -13,8 +14,6 @@ from colorama import Fore, Style, init
 from tqdm import tqdm
 
 from audio_processor import AudioProcessor
-
-# Import our modules
 from config import Config
 from file_handler import FileHandler
 from text_processor import TextProcessor, TextSegment
@@ -61,7 +60,7 @@ class AudiobookGenerator:
 
         logger.info(f"Audiobook generator initialized with language: {language}, voice: {voice_gender}")
 
-    def generate_audiobook(
+    def generate_audiobook(  # noqa: C901
         self,
         input_file: str,
         output_name: Optional[str] = None,
@@ -82,6 +81,13 @@ class AudiobookGenerator:
         """
         logger.info(f"Starting audiobook generation for: {input_file}")
 
+        # Validate input file exists and is readable
+        input_path = Path(input_file)
+        if not input_path.exists():
+            raise FileNotFoundError(f"Input file not found: {input_file}")
+        if not input_path.is_file():
+            raise ValueError(f"Input path is not a file: {input_file}")
+
         # Read input file
         print(f"{Fore.BLUE}📖 Reading input file...{Style.RESET_ALL}")
         try:
@@ -91,8 +97,13 @@ class AudiobookGenerator:
             print(f"{Fore.RED}✗ Failed to read file: {e}{Style.RESET_ALL}")
             return []
 
+        # Validate content
+        if not text_content.strip():
+            print(f"{Fore.RED}✗ Input file is empty or contains no readable text{Style.RESET_ALL}")
+            return []
+
         # Process text into segments
-        print(f"{Fore.BLUE}Processing text...{Style.RESET_ALL}")
+        print(f"{Fore.BLUE}🔧 Processing text...{Style.RESET_ALL}")
         try:
             segments = self.text_processor.create_segments(text_content, Config.CHUNK_SIZE)
 
@@ -149,6 +160,10 @@ class AudiobookGenerator:
         if not output_name:
             output_name = self.file_handler.create_output_filename(input_file, "preview" if preview_mode else "")
 
+        # Validate output filename
+        if not output_name.endswith(".mp3"):
+            output_name += ".mp3"
+
         # Generate final audiobook
         print(f"{Fore.BLUE}🎵 Creating audiobook...{Style.RESET_ALL}")
         try:
@@ -167,7 +182,7 @@ class AudiobookGenerator:
 
                 # Add metadata
                 metadata = {
-                    "title": os.path.basename(input_file),
+                    "title": input_path.stem,
                     "artist": "AI Narrator",
                     "album": "Audiobook",
                     "genre": "Audiobook",
@@ -199,35 +214,85 @@ class AudiobookGenerator:
         """List available voices for current language."""
         print(f"{Fore.BLUE}🎭 Available voices for {self.language}:{Style.RESET_ALL}")
 
-        voices = self.tts_engine.list_available_voices()
-        if voices:
-            for voice in voices:
-                voice_type = "Premium" if "Wavenet" in voice["name"] else "Standard"
-                print(f"  • {voice['name']} ({voice['gender']}) - {voice_type}")
-        else:
-            print(f"{Fore.YELLOW}No voices found{Style.RESET_ALL}")
+        try:
+            voices = self.tts_engine.list_available_voices()
+            if voices:
+                for voice in voices:
+                    voice_type = "Premium" if "Wavenet" in voice["name"] else "Standard"
+                    print(f"  • {voice['name']} ({voice['gender']}) - {voice_type}")
+            else:
+                print(f"{Fore.YELLOW}No voices found for language: {self.language}{Style.RESET_ALL}")
+        except Exception as e:
+            print(f"{Fore.RED}Error retrieving voices: {e}{Style.RESET_ALL}")
 
     def cleanup(self) -> None:
         """Clean up resources."""
-        self.audio_processor.cleanup()
+        try:
+            self.audio_processor.cleanup()
+        except Exception as e:
+            logger.warning(f"Error during cleanup: {e}")
+
+
+def validate_credentials() -> bool:
+    """Validate Google Cloud credentials."""
+    creds_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
+    if not creds_path:
+        print(f"{Fore.RED}✗ GOOGLE_APPLICATION_CREDENTIALS environment variable not set{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}Please set up Google Cloud credentials first{Style.RESET_ALL}")
+        print(
+            (
+                f"{Fore.CYAN}Example: export GOOGLE_APPLICATION_CREDENTIALS="
+                f"'/path/to/service-account-key.json'{Style.RESET_ALL}"
+            )
+        )
+        return False
+
+    if not os.path.exists(creds_path):
+        print(f"{Fore.RED}✗ Credentials file not found: {creds_path}{Style.RESET_ALL}")
+        return False
+
+    try:
+        # Try to initialize a client to validate credentials
+        from google.cloud import texttospeech
+
+        texttospeech.TextToSpeechClient()
+        return True
+    except Exception as e:
+        print(f"{Fore.RED}✗ Invalid Google Cloud credentials: {e}{Style.RESET_ALL}")
+        return False
+
+
+def validate_language_code(language: str) -> bool:
+    """Validate language code format."""
+    import re
+
+    # Basic validation for language codes like 'pt-BR', 'en-US', etc.
+    pattern = r"^[a-z]{2}(-[A-Z]{2})?$"
+    if not re.match(pattern, language):
+        print(f"{Fore.RED}✗ Invalid language code format: {language}{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}Expected format: 'pt-BR', 'en-US', 'fr-FR', etc.{Style.RESET_ALL}")
+        return False
+    return True
 
 
 # CLI Interface
 @click.group()
+@click.version_option(version="0.1.0", prog_name="fast-sttext")
 def cli() -> None:
     """Fast-STText: Convert text files to audiobooks using Google Text-to-Speech."""
     pass
 
 
 @cli.command()
-@click.argument("input_file", type=click.Path(exists=True))
-@click.option("--output", "-o", help="Output filename")
+@click.argument("input_file", type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True))
+@click.option("--output", "-o", type=str, help="Output filename (with or without .mp3 extension)")
 @click.option("--language", "-l", default="pt-BR", help="Language code (default: pt-BR)")
 @click.option(
     "--voice",
     "-v",
     default="FEMALE",
-    type=click.Choice(["MALE", "FEMALE", "NEUTRAL"]),
+    type=click.Choice(["MALE", "FEMALE", "NEUTRAL"], case_sensitive=False),
     help="Voice gender (default: FEMALE)",
 )
 @click.option(
@@ -238,37 +303,47 @@ def cli() -> None:
 @click.option("--chapters/--no-chapters", default=False, help="Split output into chapter files")
 @click.option("--preview", is_flag=True, help="Generate preview with first 5 segments only")
 def generate(
-    input_file: str, output: str, language: str, voice: str, premium: bool, chapters: bool, preview: bool
+    input_file: str, output: Optional[str], language: str, voice: str, premium: bool, chapters: bool, preview: bool
 ) -> None:
     """Generate audiobook from input file."""
 
-    # Check for Google Cloud credentials
-    if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
-        print(f"{Fore.RED}GOOGLE_APPLICATION_CREDENTIALS environment variable not set{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}Please set up Google Cloud credentials first{Style.RESET_ALL}")
+    # Validate inputs
+    if not validate_credentials():
         sys.exit(1)
+
+    if not validate_language_code(language):
+        sys.exit(1)
+
+    # Normalize voice parameter
+    voice = voice.upper()
 
     generator = None
     try:
+        print(f"{Fore.BLUE}🚀 Starting audiobook generation...{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}Input: {input_file}{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}Language: {language}, Voice: {voice}, Premium: {premium}{Style.RESET_ALL}")
+
         generator = AudiobookGenerator(language, voice, premium)
 
         output_files = generator.generate_audiobook(input_file, output, chapters, preview)
 
         if output_files:
-            print(f"\n{Fore.GREEN}Audiobook generation completed!{Style.RESET_ALL}")
+            print(f"\n{Fore.GREEN}🎉 Audiobook generation completed!{Style.RESET_ALL}")
             print(f"{Fore.CYAN}Generated files:{Style.RESET_ALL}")
             for file in output_files:
                 if file:
-                    print(f"  {file}")
+                    full_path = os.path.abspath(file)
+                    print(f"  📁 {full_path}")
         else:
-            print(f"\n{Fore.RED}Audiobook generation failed{Style.RESET_ALL}")
+            print(f"\n{Fore.RED}✗ Audiobook generation failed{Style.RESET_ALL}")
             sys.exit(1)
 
     except KeyboardInterrupt:
-        print(f"\n{Fore.YELLOW}Generation interrupted by user{Style.RESET_ALL}")
+        print(f"\n{Fore.YELLOW}⚠️  Generation interrupted by user{Style.RESET_ALL}")
         sys.exit(1)
     except Exception as e:
-        print(f"\n{Fore.RED}Error: {e}{Style.RESET_ALL}")
+        print(f"\n{Fore.RED}💥 Error: {e}{Style.RESET_ALL}")
+        logger.exception("Audiobook generation failed")
         sys.exit(1)
     finally:
         if generator:
@@ -279,12 +354,23 @@ def generate(
 @click.option("--language", "-l", default="pt-BR", help="Language code (default: pt-BR)")
 def voices(language: str) -> None:
     """List available voices for specified language."""
+    if not validate_credentials():
+        sys.exit(1)
+
+    if not validate_language_code(language):
+        sys.exit(1)
+
+    generator = None
     try:
         generator = AudiobookGenerator(language)
         generator.list_available_voices()
     except Exception as e:
         print(f"{Fore.RED}Error listing voices: {e}{Style.RESET_ALL}")
+        logger.exception("Failed to list voices")
         sys.exit(1)
+    finally:
+        if generator:
+            generator.cleanup()
 
 
 @cli.command()
@@ -295,16 +381,18 @@ def files() -> None:
         input_files = file_handler.list_input_files()
 
         if input_files:
-            print(f"{Fore.BLUE}Available input files:{Style.RESET_ALL}")
+            print(f"{Fore.BLUE}📁 Available input files:{Style.RESET_ALL}")
             for file in input_files:
                 file_info = file_handler.get_file_info(file)
-                print(f"  • {file_info['name']} ({file_info['size_formatted']})")
+                status = "✓" if file_info.get("is_supported", False) else "✗"
+                print(f"  {status} {file_info['name']} ({file_info['size_formatted']})")
         else:
-            print(f"{Fore.YELLOW}No input files found in {Config.INPUT_DIR}{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}📂 No input files found in {Config.INPUT_DIR}{Style.RESET_ALL}")
             supported_formats = ", ".join(Config.SUPPORTED_TEXT_FORMATS + Config.SUPPORTED_EBOOK_FORMATS)
-            print(f"{Fore.CYAN}Supported formats: {supported_formats} {Style.RESET_ALL}")
+            print(f"{Fore.CYAN}Supported formats: {supported_formats}{Style.RESET_ALL}")
     except Exception as e:
         print(f"{Fore.RED}Error listing files: {e}{Style.RESET_ALL}")
+        logger.exception("Failed to list files")
         sys.exit(1)
 
 
@@ -318,7 +406,31 @@ def cleanup() -> None:
         print(f"{Fore.GREEN}✓ Output directory cleaned up{Style.RESET_ALL}")
     except Exception as e:
         print(f"{Fore.RED}Error cleaning up: {e}{Style.RESET_ALL}")
+        logger.exception("Failed to cleanup")
         sys.exit(1)
+
+
+@cli.command()
+def config() -> None:
+    """Show current configuration."""
+    print(f"{Fore.BLUE}⚙️  Current Configuration:{Style.RESET_ALL}")
+    print(f"  Input Directory: {Config.INPUT_DIR}")
+    print(f"  Output Directory: {Config.OUTPUT_DIR}")
+    print(f"  Default Language: {Config.DEFAULT_LANGUAGE_CODE}")
+    print(f"  Default Voice Gender: {Config.DEFAULT_VOICE_GENDER}")
+    print(f"  Chunk Size: {Config.CHUNK_SIZE}")
+    print(f"  Max API Bytes: {Config.MAX_API_BYTES}")
+
+    # Check credentials
+    creds_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if creds_path:
+        print(f"  Google Credentials: {creds_path}")
+        if os.path.exists(creds_path):
+            print(f"  {Fore.GREEN}✓ Credentials file exists{Style.RESET_ALL}")
+        else:
+            print(f"  {Fore.RED}✗ Credentials file not found{Style.RESET_ALL}")
+    else:
+        print(f"  {Fore.RED}✗ GOOGLE_APPLICATION_CREDENTIALS not set{Style.RESET_ALL}")
 
 
 if __name__ == "__main__":

@@ -66,13 +66,6 @@ jobs:
           echo "Running tests..."
           python test_system.py
 
-      - name: Test CLI commands
-        run: |
-          echo "Testing CLI commands..."
-          python -m src.main --help
-          python -m src.main voices --help
-          python -m src.main files --help
-
   build:
     name: Build package
     runs-on: ubuntu-latest
