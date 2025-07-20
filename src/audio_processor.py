@@ -8,10 +8,9 @@ import os
 import tempfile
 from typing import Any, Dict, List, Optional
 
-from pydub import AudioSegment
-from pydub.silence import split_on_silence
+from pydub import AudioSegment  # type: ignore
 
-from .config import Config
+from config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 class AudioProcessor:
     """Handles audio processing and manipulation for audiobook generation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize audio processor."""
         self.temp_dir = tempfile.mkdtemp()
         logger.info(f"Audio processor initialized with temp dir: {self.temp_dir}")
@@ -43,22 +42,16 @@ class AudioProcessor:
         """Create silence of specified duration."""
         return AudioSegment.silent(duration=duration_ms)
 
-    def normalize_audio(
-        self, audio: AudioSegment, target_dBFS: float = -20.0
-    ) -> AudioSegment:
+    def normalize_audio(self, audio: AudioSegment, target_dBFS: float = -20.0) -> AudioSegment:
         """Normalize audio to target dBFS level."""
         change_in_dBFS = target_dBFS - audio.dBFS
         return audio.apply_gain(change_in_dBFS)
 
-    def add_fade(
-        self, audio: AudioSegment, fade_in_ms: int = 500, fade_out_ms: int = 500
-    ) -> AudioSegment:
+    def add_fade(self, audio: AudioSegment, fade_in_ms: int = 500, fade_out_ms: int = 500) -> AudioSegment:
         """Add fade in/out to audio."""
         return audio.fade_in(fade_in_ms).fade_out(fade_out_ms)
 
-    def concatenate_audio_segments(
-        self, audio_segments: List[AudioSegment], add_pauses: bool = True
-    ) -> AudioSegment:
+    def concatenate_audio_segments(self, audio_segments: List[AudioSegment], add_pauses: bool = True) -> AudioSegment:
         """
         Concatenate multiple audio segments with optional pauses.
 
@@ -128,9 +121,7 @@ class AudioProcessor:
 
                 # Add chapter break if new chapter
                 if current_chapter is not None and chapter_num != current_chapter:
-                    final_segments.append(
-                        self.add_silence(Config.PAUSE_BETWEEN_CHAPTERS)
-                    )
+                    final_segments.append(self.add_silence(Config.PAUSE_BETWEEN_CHAPTERS))
                     logger.info(f"Added chapter break before chapter {chapter_num}")
 
                 current_chapter = chapter_num
@@ -175,7 +166,7 @@ class AudioProcessor:
             return [result] if result else []
 
         # Group segments by chapter
-        chapters = {}
+        chapters: dict[int, list[tuple[int, dict]]] = {}
         for i, segment_info in enumerate(segments_info):
             if i < len(audio_bytes_list):
                 chapter_num = segment_info.get("chapter", 1)
@@ -191,9 +182,7 @@ class AudioProcessor:
             chapter_info = [info for _, info in chapter_segments]
 
             filename = f"{output_prefix}_{chapter_num:02d}.mp3"
-            output_path = self.create_audiobook_from_bytes(
-                chapter_audio_bytes, chapter_info, filename
-            )
+            output_path = self.create_audiobook_from_bytes(chapter_audio_bytes, chapter_info, filename)
 
             if output_path:
                 chapter_files.append(output_path)
@@ -256,7 +245,7 @@ class AudioProcessor:
         else:
             return f"{minutes:02d}:{seconds:02d}"
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Clean up temporary files."""
         try:
             import shutil
@@ -266,6 +255,6 @@ class AudioProcessor:
         except Exception as e:
             logger.warning(f"Failed to cleanup temp directory: {e}")
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Cleanup on deletion."""
         self.cleanup()

@@ -7,8 +7,8 @@ import re
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
-import nltk
-from nltk.tokenize import sent_tokenize, PunktSentenceTokenizer
+import nltk  # type: ignore
+from nltk.tokenize import PunktSentenceTokenizer  # type: ignore
 
 
 @dataclass
@@ -48,9 +48,7 @@ class TextProcessor:
         text = re.sub(
             r"(\w)\s*(\d{1,2})\s+([A-Z])",
             lambda m: (
-                m.group(1) + " " + m.group(3)
-                if not m.group(2) in ["19", "20"] and len(m.group(2)) <= 2
-                else m.group(0)
+                m.group(1) + " " + m.group(3) if not m.group(2) in ["19", "20"] and len(m.group(2)) <= 2 else m.group(0)
             ),
             text,
         )
@@ -186,16 +184,13 @@ class TextProcessor:
 
                 # Group sentences into chunks that fit within max_length
                 current_chunk = ""
-                chunk_sentences = []
+                chunk_sentences: List[str] = []
 
                 for sent_num, sentence in enumerate(sentences, 1):
                     cleaned_sentence = self.clean_text(sentence)
 
                     # Check if adding this sentence would exceed max_length
-                    if (
-                        len(current_chunk) + len(cleaned_sentence) + 1 > max_length
-                        and current_chunk
-                    ):
+                    if len(current_chunk) + len(cleaned_sentence) + 1 > max_length and current_chunk:
                         # Save current chunk
                         segments.append(
                             TextSegment(
@@ -211,11 +206,7 @@ class TextProcessor:
                         current_chunk = cleaned_sentence
                         chunk_sentences = [sentence]
                     else:
-                        current_chunk += (
-                            " " + cleaned_sentence
-                            if current_chunk
-                            else cleaned_sentence
-                        )
+                        current_chunk += " " + cleaned_sentence if current_chunk else cleaned_sentence
                         chunk_sentences.append(sentence)
 
                 # Add the last chunk

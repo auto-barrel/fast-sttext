@@ -12,16 +12,16 @@ import click
 from colorama import Fore, Style, init
 from tqdm import tqdm
 
-# Initialize colorama for colored output
-init()
-
-from .audio_processor import AudioProcessor
+from audio_processor import AudioProcessor
 
 # Import our modules
-from .config import Config
-from .file_handler import FileHandler
-from .text_processor import TextProcessor
-from .tts_engine import TTSEngine
+from config import Config
+from file_handler import FileHandler
+from text_processor import TextProcessor, TextSegment
+from tts_engine import TTSEngine
+
+# Initialize colorama for colored output
+init()
 
 # Configure logging
 logging.basicConfig(
@@ -59,9 +59,7 @@ class AudiobookGenerator:
         self.tts_engine = TTSEngine(language, voice_gender, premium_voices)
         self.audio_processor = AudioProcessor()
 
-        logger.info(
-            f"Audiobook generator initialized with language: {language}, voice: {voice_gender}"
-        )
+        logger.info(f"Audiobook generator initialized with language: {language}, voice: {voice_gender}")
 
     def generate_audiobook(
         self,
@@ -88,9 +86,7 @@ class AudiobookGenerator:
         print(f"{Fore.BLUE}📖 Reading input file...{Style.RESET_ALL}")
         try:
             text_content = self.file_handler.read_file(input_file)
-            print(
-                f"{Fore.GREEN}✓ Successfully read {len(text_content)} characters{Style.RESET_ALL}"
-            )
+            print(f"{Fore.GREEN}✓ Successfully read {len(text_content)} characters{Style.RESET_ALL}")
         except Exception as e:
             print(f"{Fore.RED}✗ Failed to read file: {e}{Style.RESET_ALL}")
             return []
@@ -98,19 +94,13 @@ class AudiobookGenerator:
         # Process text into segments
         print(f"{Fore.BLUE}Processing text...{Style.RESET_ALL}")
         try:
-            segments = self.text_processor.create_segments(
-                text_content, Config.CHUNK_SIZE
-            )
+            segments = self.text_processor.create_segments(text_content, Config.CHUNK_SIZE)
 
             if preview_mode:
                 segments = segments[:5]  # Only first 5 segments for preview
-                print(
-                    f"{Fore.YELLOW}Preview mode: Using only first 5 segments{Style.RESET_ALL}"
-                )
+                print(f"{Fore.YELLOW}Preview mode: Using only first 5 segments{Style.RESET_ALL}")
 
-            print(
-                f"{Fore.GREEN}✓ Created {len(segments)} text segments{Style.RESET_ALL}"
-            )
+            print(f"{Fore.GREEN}✓ Created {len(segments)} text segments{Style.RESET_ALL}")
 
             # Show chapter information
             chapters = {}
@@ -133,7 +123,7 @@ class AudiobookGenerator:
 
         with tqdm(total=len(segments), desc="Synthesizing", unit="segments") as pbar:
 
-            def progress_callback(current, total, segment):
+            def progress_callback(current: int, total: int, segment: TextSegment) -> None:
                 pbar.set_postfix(
                     {
                         "chapter": segment.chapter_number,
@@ -143,17 +133,13 @@ class AudiobookGenerator:
                 pbar.update(1)
 
             try:
-                audio_bytes_list = self.tts_engine.batch_synthesize(
-                    segments, progress_callback=progress_callback
-                )
+                audio_bytes_list = self.tts_engine.batch_synthesize(segments, progress_callback=progress_callback)
 
                 # Create segments info for audio processing
                 for segment in segments:
                     segments_info.append(self.text_processor.get_segment_info(segment))
 
-                print(
-                    f"{Fore.GREEN}✓ Generated {len(audio_bytes_list)} audio segments{Style.RESET_ALL}"
-                )
+                print(f"{Fore.GREEN}✓ Generated {len(audio_bytes_list)} audio segments{Style.RESET_ALL}")
 
             except Exception as e:
                 print(f"{Fore.RED}✗ Failed to generate audio: {e}{Style.RESET_ALL}")
@@ -161,9 +147,7 @@ class AudiobookGenerator:
 
         # Create output filename
         if not output_name:
-            output_name = self.file_handler.create_output_filename(
-                input_file, "preview" if preview_mode else ""
-            )
+            output_name = self.file_handler.create_output_filename(input_file, "preview" if preview_mode else "")
 
         # Generate final audiobook
         print(f"{Fore.BLUE}🎵 Creating audiobook...{Style.RESET_ALL}")
@@ -179,9 +163,7 @@ class AudiobookGenerator:
                 output_files = [output_file] if output_file else []
 
             if output_files:
-                print(
-                    f"{Fore.GREEN}✓ Successfully created audiobook(s){Style.RESET_ALL}"
-                )
+                print(f"{Fore.GREEN}✓ Successfully created audiobook(s){Style.RESET_ALL}")
 
                 # Add metadata
                 metadata = {
@@ -199,7 +181,9 @@ class AudiobookGenerator:
                         # Show file info
                         audio_info = self.audio_processor.get_audio_info(output_file)
                         print(
-                            f"{Fore.CYAN}{os.path.basename(output_file)}: {audio_info.get('duration_formatted', 'Unknown')} duration{Style.RESET_ALL}"
+                            f"{Fore.CYAN}{os.path.basename(output_file)}: "
+                            f"{audio_info.get('duration_formatted', 'Unknown')} duration"
+                            f"{Style.RESET_ALL}"
                         )
 
                 return output_files
@@ -223,14 +207,14 @@ class AudiobookGenerator:
         else:
             print(f"{Fore.YELLOW}No voices found{Style.RESET_ALL}")
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Clean up resources."""
         self.audio_processor.cleanup()
 
 
 # CLI Interface
 @click.group()
-def cli():
+def cli() -> None:
     """Fast-STText: Convert text files to audiobooks using Google Text-to-Speech."""
     pass
 
@@ -238,9 +222,7 @@ def cli():
 @cli.command()
 @click.argument("input_file", type=click.Path(exists=True))
 @click.option("--output", "-o", help="Output filename")
-@click.option(
-    "--language", "-l", default="pt-BR", help="Language code (default: pt-BR)"
-)
+@click.option("--language", "-l", default="pt-BR", help="Language code (default: pt-BR)")
 @click.option(
     "--voice",
     "-v",
@@ -253,32 +235,24 @@ def cli():
     default=True,
     help="Use premium Wavenet voices (default: True)",
 )
-@click.option(
-    "--chapters/--no-chapters", default=False, help="Split output into chapter files"
-)
-@click.option(
-    "--preview", is_flag=True, help="Generate preview with first 5 segments only"
-)
-def generate(input_file, output, language, voice, premium, chapters, preview):
+@click.option("--chapters/--no-chapters", default=False, help="Split output into chapter files")
+@click.option("--preview", is_flag=True, help="Generate preview with first 5 segments only")
+def generate(
+    input_file: str, output: str, language: str, voice: str, premium: bool, chapters: bool, preview: bool
+) -> None:
     """Generate audiobook from input file."""
 
     # Check for Google Cloud credentials
     if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
-        print(
-            f"{Fore.RED}GOOGLE_APPLICATION_CREDENTIALS environment variable not set{Style.RESET_ALL}"
-        )
-        print(
-            f"{Fore.YELLOW}Please set up Google Cloud credentials first{Style.RESET_ALL}"
-        )
+        print(f"{Fore.RED}GOOGLE_APPLICATION_CREDENTIALS environment variable not set{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}Please set up Google Cloud credentials first{Style.RESET_ALL}")
         sys.exit(1)
 
     generator = None
     try:
         generator = AudiobookGenerator(language, voice, premium)
 
-        output_files = generator.generate_audiobook(
-            input_file, output, chapters, preview
-        )
+        output_files = generator.generate_audiobook(input_file, output, chapters, preview)
 
         if output_files:
             print(f"\n{Fore.GREEN}Audiobook generation completed!{Style.RESET_ALL}")
@@ -302,10 +276,8 @@ def generate(input_file, output, language, voice, premium, chapters, preview):
 
 
 @cli.command()
-@click.option(
-    "--language", "-l", default="pt-BR", help="Language code (default: pt-BR)"
-)
-def voices(language):
+@click.option("--language", "-l", default="pt-BR", help="Language code (default: pt-BR)")
+def voices(language: str) -> None:
     """List available voices for specified language."""
     try:
         generator = AudiobookGenerator(language)
@@ -316,7 +288,7 @@ def voices(language):
 
 
 @cli.command()
-def files():
+def files() -> None:
     """List available input files."""
     try:
         file_handler = FileHandler()
@@ -328,12 +300,9 @@ def files():
                 file_info = file_handler.get_file_info(file)
                 print(f"  • {file_info['name']} ({file_info['size_formatted']})")
         else:
-            print(
-                f"{Fore.YELLOW}No input files found in {Config.INPUT_DIR}{Style.RESET_ALL}"
-            )
-            print(
-                f"{Fore.CYAN}Supported formats: {', '.join(Config.SUPPORTED_TEXT_FORMATS + Config.SUPPORTED_EBOOK_FORMATS)}{Style.RESET_ALL}"
-            )
+            print(f"{Fore.YELLOW}No input files found in {Config.INPUT_DIR}{Style.RESET_ALL}")
+            supported_formats = ", ".join(Config.SUPPORTED_TEXT_FORMATS + Config.SUPPORTED_EBOOK_FORMATS)
+            print(f"{Fore.CYAN}Supported formats: {supported_formats} {Style.RESET_ALL}")
     except Exception as e:
         print(f"{Fore.RED}Error listing files: {e}{Style.RESET_ALL}")
         sys.exit(1)
@@ -341,7 +310,7 @@ def files():
 
 @cli.command()
 @click.confirmation_option(prompt="Are you sure you want to clean up all output files?")
-def cleanup():
+def cleanup() -> None:
     """Clean up all generated audio files."""
     try:
         file_handler = FileHandler()

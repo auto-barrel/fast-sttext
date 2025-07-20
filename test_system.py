@@ -5,19 +5,17 @@ Test script to verify basic functionality of the audiobook generator.
 import os
 import sys
 import tempfile
-import shutil
-from pathlib import Path
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 
-def test_imports():
+def test_imports() -> bool:
     """Test that all modules can be imported."""
     print("Testing imports...")
 
     try:
-        from src.config import Config
+        from src.config import Config  # noqa: F401
 
         print("Config imported successfully")
     except ImportError as e:
@@ -25,7 +23,7 @@ def test_imports():
         return False
 
     try:
-        from src.file_handler import FileHandler
+        from src.file_handler import FileHandler  # noqa: F401
 
         print("FileHandler imported successfully")
     except ImportError as e:
@@ -33,7 +31,7 @@ def test_imports():
         return False
 
     try:
-        from src.text_processor import TextProcessor
+        from src.text_processor import TextProcessor  # noqa: F401
 
         print("TextProcessor imported successfully")
     except ImportError as e:
@@ -45,7 +43,7 @@ def test_imports():
     return True
 
 
-def test_file_operations():
+def test_file_operations() -> bool:
     """Test file handling operations."""
     print("\nTesting file operations...")
 
@@ -87,7 +85,7 @@ def test_file_operations():
         return False
 
 
-def test_text_processing():
+def test_text_processing() -> bool:
     """Test text processing functionality."""
     print("\nTesting text processing...")
 
@@ -109,11 +107,11 @@ def test_text_processing():
         # Test chapter detection
         chapter_text = """
         Capítulo 1: Primeiro Capítulo
-        
+
         Este é o conteúdo do primeiro capítulo.
-        
+
         Capítulo 2: Segundo Capítulo
-        
+
         Este é o conteúdo do segundo capítulo.
         """
 
@@ -140,7 +138,7 @@ def test_text_processing():
         return False
 
 
-def test_configuration():
+def test_configuration() -> bool:
     """Test configuration settings."""
     print("\nTesting configuration...")
 
@@ -171,7 +169,7 @@ def test_configuration():
         return False
 
 
-def test_google_credentials():
+def test_google_credentials() -> bool:
     """Test Google Cloud credentials."""
     print("\nTesting Google Cloud credentials...")
 
@@ -183,7 +181,7 @@ def test_google_credentials():
     try:
         from google.cloud import texttospeech
 
-        client = texttospeech.TextToSpeechClient()
+        texttospeech.TextToSpeechClient()
         print("Google Cloud credentials work correctly")
         return True
     except Exception as e:
@@ -191,7 +189,7 @@ def test_google_credentials():
         return False
 
 
-def main():
+def main() -> None:
     """Run all tests."""
     print(" Running fast-sttext tests...\n")
 
@@ -224,7 +222,7 @@ def main():
     print("3. Run: python example.py")
 
 
-def test_chunk_sizes():
+def test_chunk_sizes() -> bool:
     """Test different chunk sizes with your sample text."""
     try:
         from src.config import Config
@@ -257,9 +255,9 @@ def test_chunk_sizes():
                 print(f"  Within limit: {ssml_bytes <= Config.MAX_API_BYTES}")
                 print()
 
-        print(f"Chunk sizing within limits for API settings")
+        print("Chunk sizing within limits for API settings")
         return True
-    except Exception as e:
+    except Exception:
         print("chunk measurement failed")
         return False
 

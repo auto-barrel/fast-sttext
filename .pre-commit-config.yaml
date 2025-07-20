@@ -10,7 +10,7 @@ repos:
       - id: debug-statements
 
   - repo: https://github.com/psf/black
-    rev: 23.12.1
+    rev: 24.4.2
     hooks:
       - id: black
         language_version: python3
@@ -29,7 +29,7 @@ repos:
         files: ^src/
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.13.0
+    rev: v3.27.0
     hooks:
       - id: commitizen
         stages: [commit-msg]
