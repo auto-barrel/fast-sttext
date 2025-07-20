@@ -33,9 +33,9 @@ classifiers = [
 dependencies = [
     "google-cloud-texttospeech==2.17.0",
     "pydub==0.25.1",
-    "nltk==3.8.1",
+    "nltk==3.9.0",
     "click==8.1.7",
-    "tqdm==4.66.1",
+    "tqdm==4.66.3",
     "colorama==0.4.6",
     "PyPDF2==3.0.1",
     "ebooklib==0.18",
@@ -57,6 +57,7 @@ dev = [
     "build>=1.0.0",
     "twine>=4.0.0",
     "bandit>=1.8.0",
+    "safety>=3.6.0",
 ]
 
 [project.urls]
