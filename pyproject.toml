@@ -169,7 +169,7 @@ commit_message = "chore(release): {version}"
 
 [tool.semantic_release.changelog]
 template_dir = "templates"
-changelog_file = "CHANGELOG.md"
+default_templates.changelog_file = "CHANGELOG.md"
 exclude_commit_patterns = [
     "chore(release):",
     "Merge pull request",
