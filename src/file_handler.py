@@ -75,6 +75,7 @@ class FileHandler:
     def read_pdf_file(self, filepath: str) -> str:
         """
         Read a PDF file and extract text content.
+        PyPDF2 has a vulnerability, so this is commented out for now.
 
         Args:
             filepath: Path to the PDF file
@@ -83,15 +84,15 @@ class FileHandler:
             Extracted text content
         """
         try:
-            import PyPDF2
+            # import PyPDF2
 
             text = ""
-            with open(filepath, "rb") as f:
-                pdf_reader = PyPDF2.PdfReader(f)
+            # with open(filepath, "rb") as f:
+            # pdf_reader = PyPDF2.PdfReader(f)
 
-                for page_num in range(len(pdf_reader.pages)):
-                    page = pdf_reader.pages[page_num]
-                    text += page.extract_text() + "\n"
+            # for page_num in range(len(pdf_reader.pages)):
+            #     page = pdf_reader.pages[page_num]
+            #     text += page.extract_text() + "\n"
 
             logger.info(f"Extracted text from PDF: {filepath} ({len(text)} characters)")
             return text
@@ -155,8 +156,8 @@ class FileHandler:
 
         if extension in Config.SUPPORTED_TEXT_FORMATS:
             return self.read_text_file(str(file_path))
-        elif extension == ".pdf":
-            return self.read_pdf_file(str(file_path))
+        # elif extension == ".pdf":
+        #     return self.read_pdf_file(str(file_path))
         elif extension == ".epub":
             return self.read_epub_file(str(file_path))
         else:
