@@ -57,7 +57,6 @@ dev = [
     "twine>=4.0.0",
     "bandit>=1.8.0",
     "safety>=3.6.0",
-    "types-click>=8.1.0",
     "types-colorama>=0.4.0",
     "types-tqdm>=4.66.0",
     "types-beautifulsoup4>=4.12.0",
