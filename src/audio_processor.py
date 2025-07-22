@@ -6,7 +6,7 @@ Handles audio manipulation, concatenation, and format conversion.
 import logging
 import os
 import tempfile
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydub import AudioSegment  # type: ignore
 
@@ -166,7 +166,7 @@ class AudioProcessor:
             return [result] if result else []
 
         # Group segments by chapter
-        chapters: dict[int, list[tuple[int, dict]]] = {}
+        chapters: dict[int, List[Tuple[int, Dict]]] = {}
         for i, segment_info in enumerate(segments_info):
             if i < len(audio_bytes_list):
                 chapter_num = segment_info.get("chapter", 1)

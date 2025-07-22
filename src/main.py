@@ -60,7 +60,7 @@ class AudiobookGenerator:
 
         logger.info(f"Audiobook generator initialized with language: {language}, voice: {voice_gender}")
 
-    def generate_audiobook(  # noqa: C901
+    def generate_audiobook(
         self,
         input_file: str,
         output_name: Optional[str] = None,
@@ -81,6 +81,26 @@ class AudiobookGenerator:
         """
         logger.info(f"Starting audiobook generation for: {input_file}")
 
+        # Validate and read input
+        text_content = self._read_and_validate_input(input_file)
+        if not text_content:
+            return []
+
+        # Process text into segments
+        segments = self._process_text_to_segments(text_content, preview_mode)
+        if not segments:
+            return []
+
+        # Generate audio from segments
+        audio_data = self._generate_audio_segments(segments)
+        if not audio_data:
+            return []
+
+        # Create final audiobook files
+        return self._create_audiobook_files(audio_data, input_file, output_name, split_chapters, preview_mode)
+
+    def _read_and_validate_input(self, input_file: str) -> str:
+        """Read and validate input file."""
         # Validate input file exists and is readable
         input_path = Path(input_file)
         if not input_path.exists():
@@ -93,16 +113,20 @@ class AudiobookGenerator:
         try:
             text_content = self.file_handler.read_file(input_file)
             print(f"{Fore.GREEN}✓ Successfully read {len(text_content)} characters{Style.RESET_ALL}")
+
+            # Validate content
+            if not text_content.strip():
+                print(f"{Fore.RED}✗ Input file is empty or contains no readable text{Style.RESET_ALL}")
+                return ""
+
+            return text_content
+
         except Exception as e:
             print(f"{Fore.RED}✗ Failed to read file: {e}{Style.RESET_ALL}")
-            return []
+            return ""
 
-        # Validate content
-        if not text_content.strip():
-            print(f"{Fore.RED}✗ Input file is empty or contains no readable text{Style.RESET_ALL}")
-            return []
-
-        # Process text into segments
+    def _process_text_to_segments(self, text_content: str, preview_mode: bool) -> List[TextSegment]:
+        """Process text into segments for TTS."""
         print(f"{Fore.BLUE}🔧 Processing text...{Style.RESET_ALL}")
         try:
             segments = self.text_processor.create_segments(text_content, Config.CHUNK_SIZE)
@@ -114,23 +138,28 @@ class AudiobookGenerator:
             print(f"{Fore.GREEN}✓ Created {len(segments)} text segments{Style.RESET_ALL}")
 
             # Show chapter information
-            chapters = {}
-            for segment in segments:
-                chapter_num = segment.chapter_number
-                if chapter_num not in chapters:
-                    chapters[chapter_num] = 0
-                chapters[chapter_num] += 1
+            self._display_chapter_info(segments)
 
-            print(f"{Fore.CYAN}📚 Found {len(chapters)} chapters{Style.RESET_ALL}")
+            return segments
 
         except Exception as e:
             print(f"{Fore.RED}✗ Failed to process text: {e}{Style.RESET_ALL}")
             return []
 
-        # Generate audio segments
+    def _display_chapter_info(self, segments: List[TextSegment]) -> None:
+        """Display chapter information from segments."""
+        chapters = {}
+        for segment in segments:
+            chapter_num = segment.chapter_number
+            if chapter_num not in chapters:
+                chapters[chapter_num] = 0
+            chapters[chapter_num] += 1
+
+        print(f"{Fore.CYAN}📚 Found {len(chapters)} chapters{Style.RESET_ALL}")
+
+    def _generate_audio_segments(self, segments: List[TextSegment]) -> Optional[tuple]:
+        """Generate audio from text segments."""
         print(f"{Fore.BLUE}🎤 Generating audio segments...{Style.RESET_ALL}")
-        audio_bytes_list = []
-        segments_info = []
 
         with tqdm(total=len(segments), desc="Synthesizing", unit="segments") as pbar:
 
@@ -147,14 +176,28 @@ class AudiobookGenerator:
                 audio_bytes_list = self.tts_engine.batch_synthesize(segments, progress_callback=progress_callback)
 
                 # Create segments info for audio processing
+                segments_info = []
                 for segment in segments:
                     segments_info.append(self.text_processor.get_segment_info(segment))
 
                 print(f"{Fore.GREEN}✓ Generated {len(audio_bytes_list)} audio segments{Style.RESET_ALL}")
+                return (audio_bytes_list, segments_info)
 
             except Exception as e:
                 print(f"{Fore.RED}✗ Failed to generate audio: {e}{Style.RESET_ALL}")
-                return []
+                return None
+
+    def _create_audiobook_files(
+        self,
+        audio_data: tuple,
+        input_file: str,
+        output_name: Optional[str],
+        split_chapters: bool,
+        preview_mode: bool,
+    ) -> List[str]:
+        """Create final audiobook files from audio data."""
+        audio_bytes_list, segments_info = audio_data
+        input_path = Path(input_file)
 
         # Create output filename
         if not output_name:
@@ -179,28 +222,7 @@ class AudiobookGenerator:
 
             if output_files:
                 print(f"{Fore.GREEN}✓ Successfully created audiobook(s){Style.RESET_ALL}")
-
-                # Add metadata
-                metadata = {
-                    "title": input_path.stem,
-                    "artist": "AI Narrator",
-                    "album": "Audiobook",
-                    "genre": "Audiobook",
-                    "language": self.language,
-                }
-
-                for output_file in output_files:
-                    if output_file:
-                        self.audio_processor.add_metadata(output_file, metadata)
-
-                        # Show file info
-                        audio_info = self.audio_processor.get_audio_info(output_file)
-                        print(
-                            f"{Fore.CYAN}{os.path.basename(output_file)}: "
-                            f"{audio_info.get('duration_formatted', 'Unknown')} duration"
-                            f"{Style.RESET_ALL}"
-                        )
-
+                self._add_metadata_and_display_info(output_files, input_path)
                 return output_files
             else:
                 print(f"{Fore.RED}✗ Failed to create audiobook{Style.RESET_ALL}")
@@ -210,9 +232,31 @@ class AudiobookGenerator:
             print(f"{Fore.RED}✗ Failed to create audiobook: {e}{Style.RESET_ALL}")
             return []
 
+    def _add_metadata_and_display_info(self, output_files: List[str], input_path: Path) -> None:
+        """Add metadata to output files and display file information."""
+        metadata = {
+            "title": input_path.stem,
+            "artist": "AI Narrator",
+            "album": "Audiobook",
+            "genre": "Audiobook",
+            "language": self.language,
+        }
+
+        for output_file in output_files:
+            if output_file:
+                self.audio_processor.add_metadata(output_file, metadata)
+
+                # Show file info
+                audio_info = self.audio_processor.get_audio_info(output_file)
+                print(
+                    f"{Fore.CYAN}{os.path.basename(output_file)}: "
+                    f"{audio_info.get('duration_formatted', 'Unknown')} duration"
+                    f"{Style.RESET_ALL}"
+                )
+
     def list_available_voices(self) -> None:
         """List available voices for current language."""
-        print(f"{Fore.BLUE}🎭 Available voices for {self.language}:{Style.RESET_ALL}")
+        print(f"{Fore.BLUE}Available voices for {self.language}:{Style.RESET_ALL}")
 
         try:
             voices = self.tts_engine.list_available_voices()

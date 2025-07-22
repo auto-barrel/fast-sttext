@@ -72,38 +72,6 @@ class FileHandler:
             logger.error(f"Failed to read text file {filepath}: {e}")
             raise
 
-    def read_pdf_file(self, filepath: str) -> str:
-        """
-        Read a PDF file and extract text content.
-        PyPDF2 has a vulnerability, so this is commented out for now.
-
-        Args:
-            filepath: Path to the PDF file
-
-        Returns:
-            Extracted text content
-        """
-        try:
-            # import PyPDF2
-
-            text = ""
-            # with open(filepath, "rb") as f:
-            # pdf_reader = PyPDF2.PdfReader(f)
-
-            # for page_num in range(len(pdf_reader.pages)):
-            #     page = pdf_reader.pages[page_num]
-            #     text += page.extract_text() + "\n"
-
-            logger.info(f"Extracted text from PDF: {filepath} ({len(text)} characters)")
-            return text
-
-        except ImportError:
-            logger.error("PyPDF2 not installed. Install with: pip install PyPDF2")
-            raise
-        except Exception as e:
-            logger.error(f"Failed to read PDF file {filepath}: {e}")
-            raise
-
     def read_epub_file(self, filepath: str) -> str:
         """
         Read an EPUB file and extract text content.
