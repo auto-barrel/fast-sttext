@@ -1,0 +1,16 @@
+Capítulo 1: Introdução ao Sistema
+
+Este é um exemplo de texto que será convertido em audiobook usando o fast-sttext.
+
+O sistema utiliza a API do Google Text-to-Speech para gerar áudio de alta qualidade.
+Ele pode processar textos em português, inglês e muitos outros idiomas.
+
+Capítulo 2: Funcionalidades
+
+As principais funcionalidades incluem:
+- Detecção automática de capítulos
+- Processamento inteligente de texto
+- Normalização de áudio
+- Suporte a múltiplos formatos
+
+O resultado é um audiobook profissional que pode ser usado para estudos.

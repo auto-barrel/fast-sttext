@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .config import Config
+from config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class FileHandler:
     """Handles file operations for audiobook generation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize file handler."""
         self.input_dir = Config.INPUT_DIR
         self.output_dir = Config.OUTPUT_DIR
@@ -27,11 +27,9 @@ class FileHandler:
 
     def list_input_files(self) -> List[str]:
         """List all supported files in input directory."""
-        supported_extensions = (
-            Config.SUPPORTED_TEXT_FORMATS + Config.SUPPORTED_EBOOK_FORMATS
-        )
+        supported_extensions = Config.SUPPORTED_TEXT_FORMATS + Config.SUPPORTED_EBOOK_FORMATS
 
-        files = []
+        files: List[Path] = []
         for ext in supported_extensions:
             pattern = f"*{ext}"
             files.extend(Path(self.input_dir).glob(pattern))
@@ -74,37 +72,6 @@ class FileHandler:
             logger.error(f"Failed to read text file {filepath}: {e}")
             raise
 
-    def read_pdf_file(self, filepath: str) -> str:
-        """
-        Read a PDF file and extract text content.
-
-        Args:
-            filepath: Path to the PDF file
-
-        Returns:
-            Extracted text content
-        """
-        try:
-            import PyPDF2
-
-            text = ""
-            with open(filepath, "rb") as f:
-                pdf_reader = PyPDF2.PdfReader(f)
-
-                for page_num in range(len(pdf_reader.pages)):
-                    page = pdf_reader.pages[page_num]
-                    text += page.extract_text() + "\n"
-
-            logger.info(f"Extracted text from PDF: {filepath} ({len(text)} characters)")
-            return text
-
-        except ImportError:
-            logger.error("PyPDF2 not installed. Install with: pip install PyPDF2")
-            raise
-        except Exception as e:
-            logger.error(f"Failed to read PDF file {filepath}: {e}")
-            raise
-
     def read_epub_file(self, filepath: str) -> str:
         """
         Read an EPUB file and extract text content.
@@ -116,8 +83,8 @@ class FileHandler:
             Extracted text content
         """
         try:
-            import ebooklib
-            from bs4 import BeautifulSoup
+            import ebooklib  # type: ignore
+            from bs4 import BeautifulSoup  # type: ignore
             from ebooklib import epub
 
             book = epub.read_epub(filepath)
@@ -128,15 +95,11 @@ class FileHandler:
                     soup = BeautifulSoup(item.get_content(), "html.parser")
                     text += soup.get_text() + "\n"
 
-            logger.info(
-                f"Extracted text from EPUB: {filepath} ({len(text)} characters)"
-            )
+            logger.info(f"Extracted text from EPUB: {filepath} ({len(text)} characters)")
             return text
 
         except ImportError:
-            logger.error(
-                "ebooklib and beautifulsoup4 not installed. Install with: pip install ebooklib beautifulsoup4"
-            )
+            logger.error("ebooklib and beautifulsoup4 not installed. Install with: pip install ebooklib beautifulsoup4")
             raise
         except Exception as e:
             logger.error(f"Failed to read EPUB file {filepath}: {e}")
@@ -161,8 +124,8 @@ class FileHandler:
 
         if extension in Config.SUPPORTED_TEXT_FORMATS:
             return self.read_text_file(str(file_path))
-        elif extension == ".pdf":
-            return self.read_pdf_file(str(file_path))
+        # elif extension == ".pdf":
+        #     return self.read_pdf_file(str(file_path))
         elif extension == ".epub":
             return self.read_epub_file(str(file_path))
         else:
@@ -188,8 +151,7 @@ class FileHandler:
                 "size_formatted": self.format_file_size(stat.st_size),
                 "modified": stat.st_mtime,
                 "extension": path.suffix.lower(),
-                "is_supported": path.suffix.lower()
-                in (Config.SUPPORTED_TEXT_FORMATS + Config.SUPPORTED_EBOOK_FORMATS),
+                "is_supported": path.suffix.lower() in (Config.SUPPORTED_TEXT_FORMATS + Config.SUPPORTED_EBOOK_FORMATS),
             }
         except Exception as e:
             logger.error(f"Failed to get file info for {filepath}: {e}")

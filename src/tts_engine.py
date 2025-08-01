@@ -1,13 +1,13 @@
 import logging
 import os
 import time
-from typing import Any, Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 from google.api_core import exceptions
 from google.cloud import texttospeech
 
-from .config import Config
-from .text_processor import TextSegment
+from config import Config
+from text_processor import TextSegment
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -44,9 +44,7 @@ class TTSEngine:
             raise
 
         # Get voice configuration
-        self.voice_name = Config.get_voice_name(
-            self.language_code, self.voice_gender, self.use_premium_voices
-        )
+        self.voice_name = Config.get_voice_name(self.language_code, self.voice_gender, self.use_premium_voices)
 
         logger.info(f"Using voice: {self.voice_name or 'default'}")
 
@@ -122,9 +120,7 @@ class TTSEngine:
             )
 
             # Perform synthesis
-            response = self.client.synthesize_speech(
-                input=synthesis_input, voice=voice, audio_config=audio_config
-            )
+            response = self.client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
 
             # Save to file if requested
             if output_filename:
@@ -141,9 +137,7 @@ class TTSEngine:
             logger.error(f"Synthesis error: {e}")
             raise
 
-    def synthesize_segment(
-        self, segment: TextSegment, output_dir: Optional[str] = None
-    ) -> bytes:
+    def synthesize_segment(self, segment: TextSegment, output_dir: Optional[str] = None) -> bytes:
         """
         Synthesize a text segment with appropriate settings.
 
@@ -163,7 +157,7 @@ class TTSEngine:
             )
 
         # Use SSML for better speech control
-        from .text_processor import TextProcessor
+        from text_processor import TextProcessor
 
         processor = TextProcessor()
         ssml_text = processor.create_ssml(segment.text)
@@ -214,8 +208,8 @@ class TTSEngine:
 
 # Legacy function for backward compatibility
 def synthesize_text(
-    text, output_filename="output.mp3", language_code="pt-BR", ssml_gender="FEMALE"
-):
+    text: str, output_filename: str = "output.mp3", language_code: str = "pt-BR", ssml_gender: str = "FEMALE"
+) -> bytes:
     """
     Legacy function for backward compatibility.
 

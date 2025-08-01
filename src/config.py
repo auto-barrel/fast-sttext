@@ -2,9 +2,8 @@
 Configuration module for the audiobook generator.
 """
 
-import os
-from typing import Any, Dict
 import logging
+import os
 
 
 class Config:
@@ -44,9 +43,7 @@ class Config:
     }
 
     @classmethod
-    def get_voice_name(
-        cls, language_code: str, gender: str, premium: bool = True
-    ) -> str:
+    def get_voice_name(cls, language_code: str, gender: str, premium: bool = True) -> str:
         """Get appropriate voice name based on language and gender."""
         voices = cls.VOICE_OPTIONS.get(language_code, {}).get(gender, [])
         if not voices:

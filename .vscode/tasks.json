@@ -1,0 +1,213 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "create-venv",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "-m",
+                "venv",
+                "venv"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "install-deps",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/python3",
+            "args": [
+                "-m",
+                "pip",
+                "install",
+                "-e",
+                ".[dev]"
+            ],
+            "group": "build",
+            "dependsOn": "create-venv",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "format-black",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/python3",
+            "args": [
+                "-m",
+                "black",
+                "src/"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "sort-imports",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/python3",
+            "args": [
+                "-m",
+                "isort",
+                "src/"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "lint-flake8",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/python3",
+            "args": [
+                "-m",
+                "flake8",
+                "src/"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": {
+                "owner": "flake8",
+                "fileLocation": [
+                    "relative",
+                    "${workspaceFolder}"
+                ],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(\\w+)\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
+            "label": "typecheck-mypy",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/python3",
+            "args": [
+                "-m",
+                "mypy",
+                "src/",
+                "--ignore-missing-imports"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": {
+                "owner": "mypy",
+                "fileLocation": [
+                    "relative",
+                    "${workspaceFolder}"
+                ],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(error|warning|note):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
+            "label": "security-bandit",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/python3",
+            "args": [
+                "-m",
+                "bandit",
+                "-r",
+                "src/",
+                "-f",
+                "txt"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "test-pytest",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/python3",
+            "args": [
+                "-m",
+                "pytest",
+                "-v",
+                "--tb=short"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": {
+                "owner": "pytest",
+                "fileLocation": [
+                    "relative",
+                    "${workspaceFolder}"
+                ],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "message": 3
+                }
+            }
+        },
+        {
+            "label": "format-all",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "format-black",
+                "sort-imports"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "validate-all",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "format-all",
+                "lint-flake8",
+                "typecheck-mypy",
+                "security-bandit",
+                "test-pytest"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        }
+    ]
+}

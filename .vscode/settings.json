@@ -1,0 +1,102 @@
+{
+    // Python interpreter and environment
+    "python.defaultInterpreterPath": "./venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    // Formatting settings
+    "editor.formatOnSave": true,
+    "editor.formatOnType": false,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+    "editor.rulers": [
+        120
+    ],
+    // Python formatting - Black
+    "python.formatting.provider": "black",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        }
+    },
+    // Black formatter settings
+    "black-formatter.args": [
+        "--line-length=120"
+    ],
+    // Linting settings
+    "python.linting.enabled": true,
+    "python.linting.lintOnSave": true,
+    // Flake8 settings
+    "python.linting.flake8Enabled": true,
+    "python.linting.flake8Args": [
+        "--max-line-length=120",
+        "--extend-ignore=E203,W503"
+    ],
+    // MyPy settings
+    "python.linting.mypyEnabled": true,
+    "python.linting.mypyArgs": [
+        "--ignore-missing-imports",
+        "--follow-imports=silent",
+        "--show-column-numbers"
+    ],
+    // Bandit security linting
+    "python.linting.banditEnabled": true,
+    "python.linting.banditArgs": [
+        "-r",
+        "src/",
+        "-f",
+        "custom"
+    ],
+    // Pylint (disabled as you prefer flake8)
+    "python.linting.pylintEnabled": false,
+    // Import sorting - isort
+    "isort.args": [
+        "--line-length=120",
+        "--profile=black",
+        "--multi-line=3",
+        "--trailing-comma",
+        "--force-grid-wrap=0",
+        "--combine-as",
+        "--line-separator"
+    ],
+    // Python testing
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestArgs": [
+        "."
+    ],
+    // File associations
+    "files.associations": {
+        "*.py": "python",
+        ".flake8": "ini",
+        "pyproject.toml": "toml"
+    },
+    // Exclude patterns
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/.mypy_cache": true,
+        "**/.pytest_cache": true,
+        "**/build": true,
+        "**/dist": true,
+        "**/*.egg-info": true
+    },
+    // Search exclude patterns
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/bower_components": true,
+        "**/*.code-search": true,
+        "**/__pycache__": true,
+        "**/.mypy_cache": true,
+        "**/build": true,
+        "**/dist": true
+    },
+    // Git settings
+    "git.ignoreLimitWarning": true,
+    // Terminal settings
+    "terminal.integrated.env.linux": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+    }
+}
